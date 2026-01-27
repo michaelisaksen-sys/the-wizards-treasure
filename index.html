@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Wizard's Treasure - Skeleton Crypt Demo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Game Container -->
+    <div id="game-container">
+        <!-- Three.js Canvas will be inserted here -->
+    </div>
+
+    <!-- UI Overlay -->
+    <div id="ui-overlay">
+        <!-- Health Bar -->
+        <div id="health-container">
+            <div id="health-label">HEALTH</div>
+            <div id="health-bar-bg">
+                <div id="health-bar"></div>
+            </div>
+            <div id="health-text">100/100</div>
+        </div>
+
+        <!-- Kill Counter -->
+        <div id="kill-counter">
+            <span id="skeleton-icon">&#9760;</span>
+            <span id="kill-text">Skeletons remaining: 20/20</span>
+        </div>
+
+        <!-- Crosshair -->
+        <div id="crosshair">
+            <div class="crosshair-line horizontal"></div>
+            <div class="crosshair-line vertical"></div>
+        </div>
+
+        <!-- Narrative Text Box -->
+        <div id="narrative-container">
+            <div id="narrative-text"></div>
+        </div>
+
+        <!-- Attack Cooldown Indicator -->
+        <div id="attack-indicator">
+            <div id="attack-cooldown"></div>
+        </div>
+
+        <!-- Damage Overlay -->
+        <div id="damage-overlay"></div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <div id="start-content">
+            <h1>The Wizard's Treasure</h1>
+            <h2>~ Skeleton Crypt Demo ~</h2>
+            <div id="backstory">
+                <p>You are Sir Aldric, a war-weary knight fallen on hard times.</p>
+                <p>The old wizard Malachar has promised you untold riches...</p>
+                <p>All you must do is retrieve his treasure from the depths of the cursed crypt.</p>
+                <p>"Beware," he warned, "for the dead do not rest easy there."</p>
+            </div>
+            <div id="controls-info">
+                <h3>Controls</h3>
+                <p><strong>WASD</strong> - Move</p>
+                <p><strong>Mouse</strong> - Look around</p>
+                <p><strong>Left Click</strong> - Attack with sword</p>
+                <p><strong>ESC</strong> - Pause menu</p>
+            </div>
+            <button id="start-button">Enter the Crypt</button>
+        </div>
+    </div>
+
+    <!-- Pause Menu -->
+    <div id="pause-menu" class="hidden">
+        <div id="pause-content">
+            <h2>PAUSED</h2>
+            <button id="resume-button">Resume</button>
+            <button id="restart-button">Restart</button>
+        </div>
+    </div>
+
+    <!-- Victory Screen -->
+    <div id="victory-screen" class="hidden">
+        <div id="victory-content">
+            <h1>Victory!</h1>
+            <p>The last skeleton crumbles to dust at your feet.</p>
+            <p>With a grinding of ancient stone, the sealed door swings open...</p>
+            <p class="glow-text">The way deeper into the crypt is now open...</p>
+            <h2>[ To be continued ]</h2>
+            <button id="victory-restart">Press R or Click to Restart Demo</button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameover-screen" class="hidden">
+        <div id="gameover-content">
+            <h1>You Have Fallen</h1>
+            <p>The skeletons overwhelm you...</p>
+            <p>Your quest ends here, in the darkness of the crypt.</p>
+            <button id="gameover-restart">Press R or Click to Try Again</button>
+        </div>
+    </div>
+
+    <!-- Three.js and Game Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

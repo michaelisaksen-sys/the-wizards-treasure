@@ -1,0 +1,515 @@
+/* The Wizard's Treasure - Game Styles */
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    overflow: hidden;
+    background-color: #1a1a1a;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    cursor: none;
+}
+
+/* Game Container */
+#game-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+}
+
+#game-container canvas {
+    display: block;
+}
+
+/* UI Overlay */
+#ui-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Health Bar */
+#health-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 200px;
+}
+
+#health-label {
+    color: #c4a574;
+    font-size: 12px;
+    letter-spacing: 3px;
+    margin-bottom: 5px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+#health-bar-bg {
+    width: 100%;
+    height: 20px;
+    background: linear-gradient(to bottom, #2a2a2a 0%, #1a1a1a 100%);
+    border: 2px solid #4a4a4a;
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#health-bar {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, #8b0000 0%, #5c0000 50%, #8b0000 100%);
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(139, 0, 0, 0.5);
+}
+
+#health-text {
+    color: #888;
+    font-size: 11px;
+    margin-top: 3px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Kill Counter */
+#kill-counter {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: #c4a574;
+    font-size: 16px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px 15px;
+    border: 1px solid #4a4a4a;
+    border-radius: 3px;
+}
+
+#skeleton-icon {
+    font-size: 20px;
+    margin-right: 8px;
+}
+
+/* Crosshair */
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+}
+
+.crosshair-line {
+    position: absolute;
+    background-color: rgba(200, 180, 140, 0.8);
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+}
+
+.crosshair-line.horizontal {
+    width: 100%;
+    height: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.crosshair-line.vertical {
+    width: 2px;
+    height: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Narrative Text Box */
+#narrative-container {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 600px;
+    width: 90%;
+    background: rgba(20, 15, 10, 0.9);
+    border: 2px solid #4a3a2a;
+    border-radius: 5px;
+    padding: 15px 20px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+#narrative-container.visible {
+    opacity: 1;
+}
+
+#narrative-text {
+    color: #d4c4a4;
+    font-size: 16px;
+    line-height: 1.6;
+    text-align: center;
+    font-style: italic;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Attack Cooldown Indicator */
+#attack-indicator {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #4a4a4a;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+#attack-cooldown {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, #c4a574, #e8d8b8);
+    transition: width 0.1s linear;
+}
+
+/* Damage Overlay */
+#damage-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(ellipse at center, transparent 0%, rgba(139, 0, 0, 0.4) 100%);
+    opacity: 0;
+    transition: opacity 0.1s ease;
+    pointer-events: none;
+}
+
+#damage-overlay.flash {
+    opacity: 1;
+}
+
+/* Start Screen */
+#start-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(to bottom, #0a0a0a 0%, #1a1510 50%, #0a0a0a 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    cursor: default;
+}
+
+#start-content {
+    text-align: center;
+    max-width: 600px;
+    padding: 40px;
+}
+
+#start-screen h1 {
+    color: #c4a574;
+    font-size: 48px;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+    margin-bottom: 10px;
+    letter-spacing: 3px;
+}
+
+#start-screen h2 {
+    color: #8a7a5a;
+    font-size: 24px;
+    font-weight: normal;
+    margin-bottom: 30px;
+    font-style: italic;
+}
+
+#backstory {
+    color: #a09080;
+    font-size: 16px;
+    line-height: 1.8;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-left: 3px solid #4a3a2a;
+}
+
+#backstory p {
+    margin-bottom: 10px;
+}
+
+#controls-info {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 30px;
+}
+
+#controls-info h3 {
+    color: #a09080;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+#controls-info p {
+    margin-bottom: 5px;
+}
+
+#start-button {
+    background: linear-gradient(to bottom, #4a3a2a 0%, #2a1a0a 100%);
+    color: #c4a574;
+    border: 2px solid #6a5a4a;
+    padding: 15px 40px;
+    font-size: 20px;
+    font-family: 'Georgia', serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+#start-button:hover {
+    background: linear-gradient(to bottom, #5a4a3a 0%, #3a2a1a 100%);
+    border-color: #8a7a6a;
+    box-shadow: 0 0 20px rgba(196, 165, 116, 0.3);
+}
+
+/* Pause Menu */
+#pause-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    cursor: default;
+}
+
+#pause-content {
+    text-align: center;
+    background: rgba(20, 15, 10, 0.95);
+    padding: 40px 60px;
+    border: 2px solid #4a3a2a;
+    border-radius: 5px;
+}
+
+#pause-content h2 {
+    color: #c4a574;
+    font-size: 36px;
+    margin-bottom: 30px;
+    letter-spacing: 5px;
+}
+
+#pause-content button {
+    display: block;
+    width: 200px;
+    margin: 10px auto;
+    background: linear-gradient(to bottom, #4a3a2a 0%, #2a1a0a 100%);
+    color: #c4a574;
+    border: 2px solid #6a5a4a;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-family: 'Georgia', serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#pause-content button:hover {
+    background: linear-gradient(to bottom, #5a4a3a 0%, #3a2a1a 100%);
+    border-color: #8a7a6a;
+}
+
+/* Victory Screen */
+#victory-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(ellipse at center, rgba(50, 40, 20, 0.95) 0%, rgba(10, 10, 10, 0.98) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    cursor: default;
+}
+
+#victory-content {
+    text-align: center;
+    max-width: 600px;
+    padding: 40px;
+}
+
+#victory-content h1 {
+    color: #ffd700;
+    font-size: 56px;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    margin-bottom: 30px;
+    animation: glow-pulse 2s infinite;
+}
+
+#victory-content p {
+    color: #d4c4a4;
+    font-size: 18px;
+    line-height: 1.8;
+    margin-bottom: 15px;
+}
+
+#victory-content .glow-text {
+    color: #4a9;
+    font-size: 22px;
+    text-shadow: 0 0 20px rgba(68, 170, 153, 0.6);
+    margin: 30px 0;
+}
+
+#victory-content h2 {
+    color: #8a7a5a;
+    font-size: 28px;
+    font-style: italic;
+    margin: 30px 0;
+}
+
+#victory-content button {
+    background: linear-gradient(to bottom, #3a4a3a 0%, #1a2a1a 100%);
+    color: #a4c4a4;
+    border: 2px solid #5a7a5a;
+    padding: 15px 40px;
+    font-size: 16px;
+    font-family: 'Georgia', serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#victory-content button:hover {
+    background: linear-gradient(to bottom, #4a5a4a 0%, #2a3a2a 100%);
+    box-shadow: 0 0 20px rgba(100, 180, 100, 0.3);
+}
+
+/* Game Over Screen */
+#gameover-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(ellipse at center, rgba(50, 10, 10, 0.95) 0%, rgba(10, 5, 5, 0.98) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    cursor: default;
+}
+
+#gameover-content {
+    text-align: center;
+    max-width: 600px;
+    padding: 40px;
+}
+
+#gameover-content h1 {
+    color: #8b0000;
+    font-size: 48px;
+    text-shadow: 0 0 30px rgba(139, 0, 0, 0.5);
+    margin-bottom: 30px;
+}
+
+#gameover-content p {
+    color: #a08080;
+    font-size: 18px;
+    line-height: 1.8;
+    margin-bottom: 15px;
+}
+
+#gameover-content button {
+    margin-top: 30px;
+    background: linear-gradient(to bottom, #4a2a2a 0%, #2a0a0a 100%);
+    color: #c4a4a4;
+    border: 2px solid #6a4a4a;
+    padding: 15px 40px;
+    font-size: 16px;
+    font-family: 'Georgia', serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#gameover-content button:hover {
+    background: linear-gradient(to bottom, #5a3a3a 0%, #3a1a1a 100%);
+    box-shadow: 0 0 20px rgba(180, 100, 100, 0.3);
+}
+
+/* Hidden Class */
+.hidden {
+    display: none !important;
+}
+
+/* Animations */
+@keyframes glow-pulse {
+    0%, 100% {
+        text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    }
+    50% {
+        text-shadow: 0 0 50px rgba(255, 215, 0, 0.8);
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Paper/Parchment Texture Overlay (for hand-drawn aesthetic) */
+#ui-overlay::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.03"/></svg>');
+    pointer-events: none;
+    opacity: 0.5;
+    z-index: 1000;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #start-screen h1 {
+        font-size: 32px;
+    }
+
+    #start-screen h2 {
+        font-size: 18px;
+    }
+
+    #backstory {
+        font-size: 14px;
+    }
+
+    #health-container {
+        width: 150px;
+    }
+
+    #kill-counter {
+        font-size: 14px;
+    }
+
+    #narrative-text {
+        font-size: 14px;
+    }
+}
