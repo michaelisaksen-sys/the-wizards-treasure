@@ -37,8 +37,8 @@ const CONFIG = {
     SPAWN_DELAY: 0.5, // seconds between individual spawns
 
     // Visual settings
-    FOG_NEAR: 5,
-    FOG_FAR: 25,
+    FOG_NEAR: 8,
+    FOG_FAR: 30,
     TORCH_COUNT: 8,
 
     // Mouse sensitivity
@@ -296,9 +296,13 @@ function initScene() {
     playerBody.position.copy(camera.position);
     scene.add(playerBody);
 
-    // Ambient light (very dim)
-    const ambientLight = new THREE.AmbientLight(0x1a1510, 0.3);
+    // Ambient light (warm, low intensity for atmosphere)
+    const ambientLight = new THREE.AmbientLight(0x2a2015, 0.5);
     scene.add(ambientLight);
+
+    // Hemisphere light for subtle fill (sky/ground colors)
+    const hemiLight = new THREE.HemisphereLight(0x443322, 0x111108, 0.3);
+    scene.add(hemiLight);
 
     // Build the crypt room
     buildCryptRoom();
@@ -464,59 +468,166 @@ function createExitDoor() {
 }
 
 function createTorches() {
+    // Reduced torch count for performance - 8 torches with better placement
     const torchPositions = [
-        { x: -CONFIG.ROOM_WIDTH / 2 + 0.5, z: CONFIG.ROOM_DEPTH / 4 },
-        { x: CONFIG.ROOM_WIDTH / 2 - 0.5, z: CONFIG.ROOM_DEPTH / 4 },
-        { x: -CONFIG.ROOM_WIDTH / 2 + 0.5, z: -CONFIG.ROOM_DEPTH / 4 },
-        { x: CONFIG.ROOM_WIDTH / 2 - 0.5, z: -CONFIG.ROOM_DEPTH / 4 },
-        { x: -CONFIG.ROOM_WIDTH / 4, z: -CONFIG.ROOM_DEPTH / 2 + 0.5 },
-        { x: CONFIG.ROOM_WIDTH / 4, z: -CONFIG.ROOM_DEPTH / 2 + 0.5 },
-        { x: -CONFIG.ROOM_WIDTH / 4, z: CONFIG.ROOM_DEPTH / 2 - 0.5 },
-        { x: CONFIG.ROOM_WIDTH / 4, z: CONFIG.ROOM_DEPTH / 2 - 0.5 }
+        // Side walls
+        { x: -CONFIG.ROOM_WIDTH / 2 + 0.5, z: CONFIG.ROOM_DEPTH / 4, y: 2.8 },
+        { x: CONFIG.ROOM_WIDTH / 2 - 0.5, z: CONFIG.ROOM_DEPTH / 4, y: 2.8 },
+        { x: -CONFIG.ROOM_WIDTH / 2 + 0.5, z: -CONFIG.ROOM_DEPTH / 4, y: 2.8 },
+        { x: CONFIG.ROOM_WIDTH / 2 - 0.5, z: -CONFIG.ROOM_DEPTH / 4, y: 2.8 },
+        // Back wall (entrance)
+        { x: -CONFIG.ROOM_WIDTH / 3, z: CONFIG.ROOM_DEPTH / 2 - 0.5, y: 3 },
+        { x: CONFIG.ROOM_WIDTH / 3, z: CONFIG.ROOM_DEPTH / 2 - 0.5, y: 3 },
+        // Front wall (exit door)
+        { x: -CONFIG.ROOM_WIDTH / 3, z: -CONFIG.ROOM_DEPTH / 2 + 0.5, y: 3 },
+        { x: CONFIG.ROOM_WIDTH / 3, z: -CONFIG.ROOM_DEPTH / 2 + 0.5, y: 3 },
     ];
 
-    torchPositions.forEach((pos, index) => {
-        createTorch(pos.x, 3, pos.z);
+    torchPositions.forEach((pos) => {
+        createTorch(pos.x, pos.y || 3, pos.z);
     });
+
+    // Add central brazier for ambient light
+    createCentralBrazier();
 }
 
 function createTorch(x, y, z) {
-    // Torch holder
-    const holderGeom = new THREE.CylinderGeometry(0.05, 0.08, 0.4, 8);
+    const torchGroup = new THREE.Group();
+    torchGroup.position.set(x, y, z);
+
+    // Torch holder/handle (simplified geometry - 6 segments)
+    const holderGeom = new THREE.CylinderGeometry(0.04, 0.06, 0.5, 6);
     const holderMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
     const holder = new THREE.Mesh(holderGeom, holderMaterial);
-    holder.position.set(x, y, z);
-    scene.add(holder);
+    holder.position.set(0, -0.15, 0);
+    torchGroup.add(holder);
 
-    // Flame (simple cone)
-    const flameGeom = new THREE.ConeGeometry(0.1, 0.3, 8);
+    // Torch head (simplified - 6 segments)
+    const headGeom = new THREE.CylinderGeometry(0.08, 0.06, 0.15, 6);
+    const headMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1008 });
+    const head = new THREE.Mesh(headGeom, headMaterial);
+    head.position.set(0, 0.15, 0);
+    torchGroup.add(head);
+
+    // Single flame mesh (simplified - just 2 layers for performance)
+    const flameGeom = new THREE.ConeGeometry(0.1, 0.35, 5);
     const flameMaterial = new THREE.MeshBasicMaterial({
         color: 0xff6600,
         transparent: true,
         opacity: 0.9
     });
     const flame = new THREE.Mesh(flameGeom, flameMaterial);
-    flame.position.set(x, y + 0.35, z);
-    scene.add(flame);
+    flame.position.set(0, 0.38, 0);
+    torchGroup.add(flame);
 
-    // Point light
-    const light = new THREE.PointLight(0xff6633, 1, 8);
-    light.position.set(x, y + 0.3, z);
-    light.castShadow = true;
-    light.shadow.mapSize.width = 256;
-    light.shadow.mapSize.height = 256;
+    // Inner bright core
+    const coreGeom = new THREE.ConeGeometry(0.05, 0.2, 4);
+    const coreMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffff66,
+        transparent: true,
+        opacity: 0.95
+    });
+    const core = new THREE.Mesh(coreGeom, coreMaterial);
+    core.position.set(0, 0.32, 0);
+    torchGroup.add(core);
+
+    scene.add(torchGroup);
+
+    // Single point light per torch - NO shadows for performance
+    const light = new THREE.PointLight(0xff6633, 2.0, 14);
+    light.position.set(x, y + 0.4, z);
+    // Shadows disabled for torches - only brazier casts shadows
     scene.add(light);
 
-    torches.push({ holder, flame, light, baseIntensity: 1 });
+    torches.push({
+        group: torchGroup,
+        flame,
+        core,
+        light,
+        baseIntensity: 2.0
+    });
+}
+
+function createCentralBrazier() {
+    const brazierGroup = new THREE.Group();
+    brazierGroup.position.set(0, 0, 0);
+
+    // Stone base (reduced segments)
+    const baseGeom = new THREE.CylinderGeometry(0.8, 1, 0.3, 6);
+    const stoneMaterial = new THREE.MeshLambertMaterial({ color: 0x3a3530 });
+    const base = new THREE.Mesh(baseGeom, stoneMaterial);
+    base.position.y = 0.15;
+    brazierGroup.add(base);
+
+    // Metal bowl (reduced segments)
+    const bowlGeom = new THREE.CylinderGeometry(0.7, 0.5, 0.4, 6, 1, true);
+    const metalMaterial = new THREE.MeshLambertMaterial({
+        color: 0x2a2a2a,
+        side: THREE.DoubleSide
+    });
+    const bowl = new THREE.Mesh(bowlGeom, metalMaterial);
+    bowl.position.y = 0.5;
+    brazierGroup.add(bowl);
+
+    // Burning coals/embers base
+    const coalsGeom = new THREE.CylinderGeometry(0.5, 0.45, 0.15, 6);
+    const coalsMaterial = new THREE.MeshBasicMaterial({ color: 0x441100 });
+    const coals = new THREE.Mesh(coalsGeom, coalsMaterial);
+    coals.position.y = 0.45;
+    brazierGroup.add(coals);
+
+    // Simplified flame - just 2 layers for performance
+    const centralFlameGeom = new THREE.ConeGeometry(0.35, 1.0, 5);
+    const centralFlameMat = new THREE.MeshBasicMaterial({
+        color: 0xff6600,
+        transparent: true,
+        opacity: 0.8
+    });
+    const centralFlame = new THREE.Mesh(centralFlameGeom, centralFlameMat);
+    centralFlame.position.y = 0.95;
+    brazierGroup.add(centralFlame);
+
+    // Inner bright core
+    const coreGeom = new THREE.ConeGeometry(0.15, 0.6, 4);
+    const coreMat = new THREE.MeshBasicMaterial({
+        color: 0xffff44,
+        transparent: true,
+        opacity: 0.95
+    });
+    const core = new THREE.Mesh(coreGeom, coreMat);
+    core.position.y = 0.8;
+    brazierGroup.add(core);
+
+    scene.add(brazierGroup);
+
+    // Single main light with shadow (only shadow-casting light in scene)
+    const brazierLight = new THREE.PointLight(0xff6633, 3.5, 18);
+    brazierLight.position.set(0, 1.5, 0);
+    brazierLight.castShadow = true;
+    brazierLight.shadow.mapSize.width = 256;
+    brazierLight.shadow.mapSize.height = 256;
+    brazierLight.shadow.camera.near = 0.5;
+    brazierLight.shadow.camera.far = 15;
+    scene.add(brazierLight);
+
+    // Store brazier for animation
+    torches.push({
+        isBrazier: true,
+        group: brazierGroup,
+        flame: centralFlame,
+        core: core,
+        coals,
+        brazierLight,
+        baseIntensity: 3.5
+    });
 }
 
 function createDebris() {
-    // Scattered bones
-    for (let i = 0; i < 15; i++) {
-        const boneGeom = new THREE.CylinderGeometry(0.03, 0.02, 0.3 + Math.random() * 0.3, 6);
-        const boneMaterial = new THREE.MeshLambertMaterial({ color: 0xc4b8a0 });
+    // Scattered bones - reduced count and geometry
+    const boneMaterial = new THREE.MeshLambertMaterial({ color: 0xc4b8a0 });
+    for (let i = 0; i < 8; i++) {
+        const boneGeom = new THREE.CylinderGeometry(0.03, 0.02, 0.35, 4);
         const bone = new THREE.Mesh(boneGeom, boneMaterial);
-
         bone.position.set(
             (Math.random() - 0.5) * (CONFIG.ROOM_WIDTH - 2),
             0.05,
@@ -527,34 +638,23 @@ function createDebris() {
         scene.add(bone);
     }
 
-    // Skulls
-    for (let i = 0; i < 5; i++) {
-        const skullGroup = new THREE.Group();
-
-        // Cranium
-        const craniumGeom = new THREE.SphereGeometry(0.12, 8, 6);
-        const skullMaterial = new THREE.MeshLambertMaterial({ color: 0xd4c8b0 });
-        const cranium = new THREE.Mesh(craniumGeom, skullMaterial);
-        cranium.scale.set(1, 0.9, 1.1);
-        skullGroup.add(cranium);
-
-        // Jaw
-        const jawGeom = new THREE.BoxGeometry(0.1, 0.05, 0.08);
-        const jaw = new THREE.Mesh(jawGeom, skullMaterial);
-        jaw.position.set(0, -0.08, 0.05);
-        skullGroup.add(jaw);
-
-        skullGroup.position.set(
+    // Skulls - reduced count and simplified geometry
+    const skullMaterial = new THREE.MeshLambertMaterial({ color: 0xd4c8b0 });
+    for (let i = 0; i < 3; i++) {
+        // Simplified skull - just a sphere
+        const skullGeom = new THREE.SphereGeometry(0.12, 6, 4);
+        const skull = new THREE.Mesh(skullGeom, skullMaterial);
+        skull.scale.set(1, 0.9, 1.1);
+        skull.position.set(
             (Math.random() - 0.5) * (CONFIG.ROOM_WIDTH - 3),
             0.1,
             (Math.random() - 0.5) * (CONFIG.ROOM_DEPTH - 3)
         );
-        skullGroup.rotation.y = Math.random() * Math.PI * 2;
-        scene.add(skullGroup);
+        scene.add(skull);
     }
 
-    // Crates
-    for (let i = 0; i < 3; i++) {
+    // Crates - reduced count
+    for (let i = 0; i < 2; i++) {
         const crateSize = 0.5 + Math.random() * 0.3;
         const crateGeom = new THREE.BoxGeometry(crateSize, crateSize, crateSize);
         const crateMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
@@ -608,7 +708,7 @@ function createPillars() {
 }
 
 function createDustParticles() {
-    const particleCount = 200;
+    const particleCount = 80; // Reduced for performance
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
 
@@ -715,40 +815,26 @@ function createSkeleton(x, z) {
         targetPosition: new THREE.Vector3()
     };
 
+    // Reuse materials for all skeletons (performance)
     const boneMaterial = new THREE.MeshLambertMaterial({ color: 0xc4b8a0 });
     const darkBoneMaterial = new THREE.MeshLambertMaterial({ color: 0xa49880 });
+    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff3300 });
 
-    // Pelvis
-    const pelvisGeom = new THREE.BoxGeometry(0.4, 0.15, 0.2);
-    const pelvis = new THREE.Mesh(pelvisGeom, boneMaterial);
-    pelvis.position.y = 0.9;
-    skeleton.add(pelvis);
+    // Simplified skeleton body - single box for torso
+    const torsoGeom = new THREE.BoxGeometry(0.35, 0.6, 0.2);
+    const torso = new THREE.Mesh(torsoGeom, darkBoneMaterial);
+    torso.position.y = 1.2;
+    skeleton.add(torso);
 
-    // Spine
-    for (let i = 0; i < 4; i++) {
-        const vertebraGeom = new THREE.CylinderGeometry(0.06, 0.07, 0.12, 6);
-        const vertebra = new THREE.Mesh(vertebraGeom, boneMaterial);
-        vertebra.position.y = 1.05 + i * 0.12;
-        skeleton.add(vertebra);
-    }
-
-    // Ribcage (simplified)
-    const ribcageGeom = new THREE.BoxGeometry(0.35, 0.35, 0.2);
-    const ribcage = new THREE.Mesh(ribcageGeom, darkBoneMaterial);
-    ribcage.position.y = 1.35;
-    skeleton.add(ribcage);
-
-    // Skull
-    const skullGeom = new THREE.SphereGeometry(0.15, 8, 6);
+    // Skull (reduced segments)
+    const skullGeom = new THREE.SphereGeometry(0.15, 6, 4);
     const skull = new THREE.Mesh(skullGeom, boneMaterial);
     skull.scale.set(1, 1.1, 1.2);
     skull.position.y = 1.7;
     skeleton.add(skull);
 
-    // Eye sockets (glowing)
-    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff3300 });
-    const eyeGeom = new THREE.SphereGeometry(0.03, 6, 6);
-
+    // Eyes (glowing - reduced segments)
+    const eyeGeom = new THREE.SphereGeometry(0.035, 4, 4);
     const leftEye = new THREE.Mesh(eyeGeom, eyeMaterial);
     leftEye.position.set(-0.05, 1.72, 0.12);
     skeleton.add(leftEye);
@@ -757,65 +843,26 @@ function createSkeleton(x, z) {
     rightEye.position.set(0.05, 1.72, 0.12);
     skeleton.add(rightEye);
 
-    // Jaw
-    const jawGeom = new THREE.BoxGeometry(0.12, 0.05, 0.1);
-    const jaw = new THREE.Mesh(jawGeom, boneMaterial);
-    jaw.position.set(0, 1.58, 0.08);
-    skeleton.add(jaw);
-
-    // Arms
+    // Simplified arms - just cylinders
     [-1, 1].forEach(side => {
-        // Upper arm
-        const upperArmGeom = new THREE.CylinderGeometry(0.03, 0.04, 0.35, 6);
-        const upperArm = new THREE.Mesh(upperArmGeom, boneMaterial);
-        upperArm.position.set(side * 0.25, 1.35, 0);
-        upperArm.rotation.z = side * 0.3;
-        skeleton.add(upperArm);
-
-        // Lower arm
-        const lowerArmGeom = new THREE.CylinderGeometry(0.025, 0.03, 0.3, 6);
-        const lowerArm = new THREE.Mesh(lowerArmGeom, boneMaterial);
-        lowerArm.position.set(side * 0.35, 1.1, 0.1);
-        lowerArm.rotation.x = 0.5;
-        lowerArm.rotation.z = side * 0.2;
-        skeleton.add(lowerArm);
-
-        // Claw-like hand
-        const handGeom = new THREE.ConeGeometry(0.04, 0.1, 4);
-        const hand = new THREE.Mesh(handGeom, darkBoneMaterial);
-        hand.position.set(side * 0.4, 0.9, 0.2);
-        hand.rotation.x = Math.PI / 2;
-        skeleton.add(hand);
+        const armGeom = new THREE.CylinderGeometry(0.03, 0.04, 0.6, 4);
+        const arm = new THREE.Mesh(armGeom, boneMaterial);
+        arm.position.set(side * 0.28, 1.1, 0.05);
+        arm.rotation.z = side * 0.3;
+        arm.rotation.x = 0.3;
+        skeleton.add(arm);
     });
 
-    // Legs
+    // Simplified legs - just cylinders
     [-1, 1].forEach(side => {
-        // Thigh
-        const thighGeom = new THREE.CylinderGeometry(0.04, 0.05, 0.4, 6);
-        const thigh = new THREE.Mesh(thighGeom, boneMaterial);
-        thigh.position.set(side * 0.12, 0.65, 0);
-        skeleton.add(thigh);
-
-        // Shin
-        const shinGeom = new THREE.CylinderGeometry(0.03, 0.04, 0.4, 6);
-        const shin = new THREE.Mesh(shinGeom, boneMaterial);
-        shin.position.set(side * 0.12, 0.25, 0);
-        skeleton.add(shin);
-
-        // Foot
-        const footGeom = new THREE.BoxGeometry(0.08, 0.05, 0.15);
-        const foot = new THREE.Mesh(footGeom, darkBoneMaterial);
-        foot.position.set(side * 0.12, 0.025, 0.03);
-        skeleton.add(foot);
+        const legGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.8, 4);
+        const leg = new THREE.Mesh(legGeom, boneMaterial);
+        leg.position.set(side * 0.12, 0.45, 0);
+        skeleton.add(leg);
     });
 
     skeleton.position.set(x, 0, z);
-    skeleton.castShadow = true;
-
-    // Add point light for glowing eyes
-    const eyeLight = new THREE.PointLight(0xff3300, 0.3, 2);
-    eyeLight.position.set(0, 1.7, 0.15);
-    skeleton.add(eyeLight);
+    // No shadow casting for skeletons - performance
 
     scene.add(skeleton);
     skeletons.push(skeleton);
@@ -1385,18 +1432,41 @@ function restartGame() {
 // ============================================================================
 
 function updateVisualEffects(delta) {
-    // Torch flicker
-    torches.forEach(torch => {
-        const flicker = 0.8 + Math.random() * 0.4;
-        torch.light.intensity = torch.baseIntensity * flicker;
-        torch.flame.scale.set(flicker, 0.8 + Math.random() * 0.4, flicker);
+    const time = Date.now() * 0.001;
+
+    // Simplified torch and brazier flicker - less per-frame work
+    torches.forEach((torch, index) => {
+        // Simple flicker using sin for smoother animation (less random calls)
+        const flicker = 0.9 + Math.sin(time * 8 + index * 2) * 0.15;
+
+        if (torch.isBrazier) {
+            // Animate central brazier
+            torch.brazierLight.intensity = torch.baseIntensity * flicker;
+
+            // Simple flame scale animation
+            const scaleY = 0.95 + Math.sin(time * 6) * 0.1;
+            torch.flame.scale.y = scaleY;
+            torch.core.scale.y = scaleY * 1.1;
+
+            // Pulsing coals (less frequent update)
+            const coalPulse = 0.85 + Math.sin(time * 2) * 0.15;
+            torch.coals.material.color.setRGB(0.27 * coalPulse, 0.07 * coalPulse, 0);
+        } else {
+            // Animate wall torches - simplified
+            torch.light.intensity = torch.baseIntensity * flicker;
+
+            // Simple flame animation
+            const flameScale = 0.9 + Math.sin(time * 10 + index) * 0.15;
+            torch.flame.scale.set(flameScale, 0.95 + Math.sin(time * 8 + index) * 0.1, flameScale);
+            torch.core.scale.y = 0.95 + Math.sin(time * 12 + index) * 0.1;
+        }
     });
 
-    // Dust particle movement
-    if (dustParticles) {
+    // Dust particles - update less frequently for performance
+    if (dustParticles && Math.floor(time * 10) % 2 === 0) {
         const positions = dustParticles.geometry.attributes.position.array;
         for (let i = 0; i < positions.length; i += 3) {
-            positions[i + 1] += Math.sin(Date.now() * 0.001 + i) * 0.001;
+            positions[i + 1] += 0.003;
             if (positions[i + 1] > CONFIG.ROOM_HEIGHT) {
                 positions[i + 1] = 0;
             }
