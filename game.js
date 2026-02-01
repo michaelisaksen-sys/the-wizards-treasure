@@ -39,7 +39,7 @@ const CONFIG = {
     // Visual settings
     FOG_NEAR: 8,
     FOG_FAR: 30,
-    TORCH_COUNT: 14,
+    TORCH_COUNT: 8,
 
     // Mouse sensitivity
     MOUSE_SENSITIVITY: 0.002
@@ -468,25 +468,19 @@ function createExitDoor() {
 }
 
 function createTorches() {
+    // Reduced torch count for performance - 8 torches with better placement
     const torchPositions = [
-        // Side walls - multiple heights and positions
-        { x: -CONFIG.ROOM_WIDTH / 2 + 0.5, z: CONFIG.ROOM_DEPTH / 3, y: 2.5 },
-        { x: CONFIG.ROOM_WIDTH / 2 - 0.5, z: CONFIG.ROOM_DEPTH / 3, y: 2.5 },
-        { x: -CONFIG.ROOM_WIDTH / 2 + 0.5, z: 0, y: 3 },
-        { x: CONFIG.ROOM_WIDTH / 2 - 0.5, z: 0, y: 3 },
-        { x: -CONFIG.ROOM_WIDTH / 2 + 0.5, z: -CONFIG.ROOM_DEPTH / 3, y: 2.5 },
-        { x: CONFIG.ROOM_WIDTH / 2 - 0.5, z: -CONFIG.ROOM_DEPTH / 3, y: 2.5 },
+        // Side walls
+        { x: -CONFIG.ROOM_WIDTH / 2 + 0.5, z: CONFIG.ROOM_DEPTH / 4, y: 2.8 },
+        { x: CONFIG.ROOM_WIDTH / 2 - 0.5, z: CONFIG.ROOM_DEPTH / 4, y: 2.8 },
+        { x: -CONFIG.ROOM_WIDTH / 2 + 0.5, z: -CONFIG.ROOM_DEPTH / 4, y: 2.8 },
+        { x: CONFIG.ROOM_WIDTH / 2 - 0.5, z: -CONFIG.ROOM_DEPTH / 4, y: 2.8 },
         // Back wall (entrance)
         { x: -CONFIG.ROOM_WIDTH / 3, z: CONFIG.ROOM_DEPTH / 2 - 0.5, y: 3 },
         { x: CONFIG.ROOM_WIDTH / 3, z: CONFIG.ROOM_DEPTH / 2 - 0.5, y: 3 },
         // Front wall (exit door)
         { x: -CONFIG.ROOM_WIDTH / 3, z: -CONFIG.ROOM_DEPTH / 2 + 0.5, y: 3 },
         { x: CONFIG.ROOM_WIDTH / 3, z: -CONFIG.ROOM_DEPTH / 2 + 0.5, y: 3 },
-        // Corner torches for extra illumination
-        { x: -CONFIG.ROOM_WIDTH / 2 + 1.5, z: CONFIG.ROOM_DEPTH / 2 - 1.5, y: 2.8 },
-        { x: CONFIG.ROOM_WIDTH / 2 - 1.5, z: CONFIG.ROOM_DEPTH / 2 - 1.5, y: 2.8 },
-        { x: -CONFIG.ROOM_WIDTH / 2 + 1.5, z: -CONFIG.ROOM_DEPTH / 2 + 1.5, y: 2.8 },
-        { x: CONFIG.ROOM_WIDTH / 2 - 1.5, z: -CONFIG.ROOM_DEPTH / 2 + 1.5, y: 2.8 },
     ];
 
     torchPositions.forEach((pos) => {
@@ -501,96 +495,56 @@ function createTorch(x, y, z) {
     const torchGroup = new THREE.Group();
     torchGroup.position.set(x, y, z);
 
-    // Wall mount bracket
-    const bracketGeom = new THREE.BoxGeometry(0.15, 0.08, 0.2);
-    const bracketMaterial = new THREE.MeshLambertMaterial({ color: 0x2a1a0a });
-    const bracket = new THREE.Mesh(bracketGeom, bracketMaterial);
-    bracket.position.set(0, 0.1, 0);
-    torchGroup.add(bracket);
-
-    // Torch holder/handle
-    const holderGeom = new THREE.CylinderGeometry(0.04, 0.06, 0.5, 8);
+    // Torch holder/handle (simplified geometry - 6 segments)
+    const holderGeom = new THREE.CylinderGeometry(0.04, 0.06, 0.5, 6);
     const holderMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
     const holder = new THREE.Mesh(holderGeom, holderMaterial);
     holder.position.set(0, -0.15, 0);
     torchGroup.add(holder);
 
-    // Torch head (wrapped cloth/pitch)
-    const headGeom = new THREE.CylinderGeometry(0.08, 0.06, 0.15, 8);
+    // Torch head (simplified - 6 segments)
+    const headGeom = new THREE.CylinderGeometry(0.08, 0.06, 0.15, 6);
     const headMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1008 });
     const head = new THREE.Mesh(headGeom, headMaterial);
     head.position.set(0, 0.15, 0);
     torchGroup.add(head);
 
-    // Inner flame (bright core)
-    const innerFlameGeom = new THREE.ConeGeometry(0.06, 0.25, 8);
-    const innerFlameMaterial = new THREE.MeshBasicMaterial({
+    // Single flame mesh (simplified - just 2 layers for performance)
+    const flameGeom = new THREE.ConeGeometry(0.1, 0.35, 5);
+    const flameMaterial = new THREE.MeshBasicMaterial({
+        color: 0xff6600,
+        transparent: true,
+        opacity: 0.9
+    });
+    const flame = new THREE.Mesh(flameGeom, flameMaterial);
+    flame.position.set(0, 0.38, 0);
+    torchGroup.add(flame);
+
+    // Inner bright core
+    const coreGeom = new THREE.ConeGeometry(0.05, 0.2, 4);
+    const coreMaterial = new THREE.MeshBasicMaterial({
         color: 0xffff66,
         transparent: true,
         opacity: 0.95
     });
-    const innerFlame = new THREE.Mesh(innerFlameGeom, innerFlameMaterial);
-    innerFlame.position.set(0, 0.35, 0);
-    torchGroup.add(innerFlame);
-
-    // Middle flame layer
-    const midFlameGeom = new THREE.ConeGeometry(0.1, 0.35, 8);
-    const midFlameMaterial = new THREE.MeshBasicMaterial({
-        color: 0xff8800,
-        transparent: true,
-        opacity: 0.8
-    });
-    const midFlame = new THREE.Mesh(midFlameGeom, midFlameMaterial);
-    midFlame.position.set(0, 0.38, 0);
-    torchGroup.add(midFlame);
-
-    // Outer flame (flickering edge)
-    const outerFlameGeom = new THREE.ConeGeometry(0.14, 0.45, 8);
-    const outerFlameMaterial = new THREE.MeshBasicMaterial({
-        color: 0xff4400,
-        transparent: true,
-        opacity: 0.5
-    });
-    const outerFlame = new THREE.Mesh(outerFlameGeom, outerFlameMaterial);
-    outerFlame.position.set(0, 0.4, 0);
-    torchGroup.add(outerFlame);
-
-    // Smoke tip (dark top of flame)
-    const smokeGeom = new THREE.ConeGeometry(0.03, 0.1, 6);
-    const smokeMaterial = new THREE.MeshBasicMaterial({
-        color: 0x331100,
-        transparent: true,
-        opacity: 0.4
-    });
-    const smoke = new THREE.Mesh(smokeGeom, smokeMaterial);
-    smoke.position.set(0, 0.6, 0);
-    torchGroup.add(smoke);
+    const core = new THREE.Mesh(coreGeom, coreMaterial);
+    core.position.set(0, 0.32, 0);
+    torchGroup.add(core);
 
     scene.add(torchGroup);
 
-    // Main point light (warm orange)
-    const light = new THREE.PointLight(0xff6633, 1.8, 12);
+    // Single point light per torch - NO shadows for performance
+    const light = new THREE.PointLight(0xff6633, 2.0, 14);
     light.position.set(x, y + 0.4, z);
-    light.castShadow = true;
-    light.shadow.mapSize.width = 256;
-    light.shadow.mapSize.height = 256;
+    // Shadows disabled for torches - only brazier casts shadows
     scene.add(light);
-
-    // Secondary fill light (softer, wider)
-    const fillLight = new THREE.PointLight(0xff4422, 0.5, 8);
-    fillLight.position.set(x, y + 0.2, z);
-    scene.add(fillLight);
 
     torches.push({
         group: torchGroup,
-        innerFlame,
-        midFlame,
-        outerFlame,
-        smoke,
+        flame,
+        core,
         light,
-        fillLight,
-        baseIntensity: 1.8,
-        baseFillIntensity: 0.5
+        baseIntensity: 2.0
     });
 }
 
@@ -598,15 +552,15 @@ function createCentralBrazier() {
     const brazierGroup = new THREE.Group();
     brazierGroup.position.set(0, 0, 0);
 
-    // Stone base
-    const baseGeom = new THREE.CylinderGeometry(0.8, 1, 0.3, 8);
+    // Stone base (reduced segments)
+    const baseGeom = new THREE.CylinderGeometry(0.8, 1, 0.3, 6);
     const stoneMaterial = new THREE.MeshLambertMaterial({ color: 0x3a3530 });
     const base = new THREE.Mesh(baseGeom, stoneMaterial);
     base.position.y = 0.15;
     brazierGroup.add(base);
 
-    // Metal bowl
-    const bowlGeom = new THREE.CylinderGeometry(0.7, 0.5, 0.4, 8, 1, true);
+    // Metal bowl (reduced segments)
+    const bowlGeom = new THREE.CylinderGeometry(0.7, 0.5, 0.4, 6, 1, true);
     const metalMaterial = new THREE.MeshLambertMaterial({
         color: 0x2a2a2a,
         side: THREE.DoubleSide
@@ -615,116 +569,65 @@ function createCentralBrazier() {
     bowl.position.y = 0.5;
     brazierGroup.add(bowl);
 
-    // Bowl bottom
-    const bowlBottomGeom = new THREE.CircleGeometry(0.5, 8);
-    const bowlBottom = new THREE.Mesh(bowlBottomGeom, metalMaterial);
-    bowlBottom.rotation.x = -Math.PI / 2;
-    bowlBottom.position.y = 0.31;
-    brazierGroup.add(bowlBottom);
-
     // Burning coals/embers base
-    const coalsGeom = new THREE.CylinderGeometry(0.5, 0.45, 0.15, 8);
+    const coalsGeom = new THREE.CylinderGeometry(0.5, 0.45, 0.15, 6);
     const coalsMaterial = new THREE.MeshBasicMaterial({ color: 0x441100 });
     const coals = new THREE.Mesh(coalsGeom, coalsMaterial);
     coals.position.y = 0.45;
     brazierGroup.add(coals);
 
-    // Large central flame - inner core
-    const centralInnerGeom = new THREE.ConeGeometry(0.2, 0.8, 8);
-    const centralInnerMat = new THREE.MeshBasicMaterial({
+    // Simplified flame - just 2 layers for performance
+    const centralFlameGeom = new THREE.ConeGeometry(0.35, 1.0, 5);
+    const centralFlameMat = new THREE.MeshBasicMaterial({
+        color: 0xff6600,
+        transparent: true,
+        opacity: 0.8
+    });
+    const centralFlame = new THREE.Mesh(centralFlameGeom, centralFlameMat);
+    centralFlame.position.y = 0.95;
+    brazierGroup.add(centralFlame);
+
+    // Inner bright core
+    const coreGeom = new THREE.ConeGeometry(0.15, 0.6, 4);
+    const coreMat = new THREE.MeshBasicMaterial({
         color: 0xffff44,
         transparent: true,
-        opacity: 0.9
+        opacity: 0.95
     });
-    const centralInner = new THREE.Mesh(centralInnerGeom, centralInnerMat);
-    centralInner.position.y = 0.9;
-    brazierGroup.add(centralInner);
-
-    // Large central flame - middle
-    const centralMidGeom = new THREE.ConeGeometry(0.35, 1.0, 8);
-    const centralMidMat = new THREE.MeshBasicMaterial({
-        color: 0xff7700,
-        transparent: true,
-        opacity: 0.7
-    });
-    const centralMid = new THREE.Mesh(centralMidGeom, centralMidMat);
-    centralMid.position.y = 0.95;
-    brazierGroup.add(centralMid);
-
-    // Large central flame - outer
-    const centralOuterGeom = new THREE.ConeGeometry(0.5, 1.2, 8);
-    const centralOuterMat = new THREE.MeshBasicMaterial({
-        color: 0xff4400,
-        transparent: true,
-        opacity: 0.4
-    });
-    const centralOuter = new THREE.Mesh(centralOuterGeom, centralOuterMat);
-    centralOuter.position.y = 1.0;
-    brazierGroup.add(centralOuter);
-
-    // Secondary flames around the edge
-    for (let i = 0; i < 5; i++) {
-        const angle = (i / 5) * Math.PI * 2;
-        const radius = 0.3;
-
-        const sideFlameGeom = new THREE.ConeGeometry(0.1, 0.5, 6);
-        const sideFlameMat = new THREE.MeshBasicMaterial({
-            color: 0xff6600,
-            transparent: true,
-            opacity: 0.7
-        });
-        const sideFlame = new THREE.Mesh(sideFlameGeom, sideFlameMat);
-        sideFlame.position.set(
-            Math.cos(angle) * radius,
-            0.7,
-            Math.sin(angle) * radius
-        );
-        brazierGroup.add(sideFlame);
-    }
+    const core = new THREE.Mesh(coreGeom, coreMat);
+    core.position.y = 0.8;
+    brazierGroup.add(core);
 
     scene.add(brazierGroup);
 
-    // Strong central light
-    const brazierLight = new THREE.PointLight(0xff6633, 3, 15);
+    // Single main light with shadow (only shadow-casting light in scene)
+    const brazierLight = new THREE.PointLight(0xff6633, 3.5, 18);
     brazierLight.position.set(0, 1.5, 0);
     brazierLight.castShadow = true;
-    brazierLight.shadow.mapSize.width = 512;
-    brazierLight.shadow.mapSize.height = 512;
+    brazierLight.shadow.mapSize.width = 256;
+    brazierLight.shadow.mapSize.height = 256;
+    brazierLight.shadow.camera.near = 0.5;
+    brazierLight.shadow.camera.far = 15;
     scene.add(brazierLight);
-
-    // Upward light for ceiling illumination
-    const upLight = new THREE.PointLight(0xff5522, 1.5, 10);
-    upLight.position.set(0, 2.5, 0);
-    scene.add(upLight);
-
-    // Ground-level fill light
-    const groundLight = new THREE.PointLight(0xff4411, 1, 8);
-    groundLight.position.set(0, 0.5, 0);
-    scene.add(groundLight);
 
     // Store brazier for animation
     torches.push({
         isBrazier: true,
         group: brazierGroup,
-        centralInner,
-        centralMid,
-        centralOuter,
+        flame: centralFlame,
+        core: core,
         coals,
         brazierLight,
-        upLight,
-        groundLight,
-        baseIntensity: 3,
-        baseFillIntensity: 1.5
+        baseIntensity: 3.5
     });
 }
 
 function createDebris() {
-    // Scattered bones
-    for (let i = 0; i < 15; i++) {
-        const boneGeom = new THREE.CylinderGeometry(0.03, 0.02, 0.3 + Math.random() * 0.3, 6);
-        const boneMaterial = new THREE.MeshLambertMaterial({ color: 0xc4b8a0 });
+    // Scattered bones - reduced count and geometry
+    const boneMaterial = new THREE.MeshLambertMaterial({ color: 0xc4b8a0 });
+    for (let i = 0; i < 8; i++) {
+        const boneGeom = new THREE.CylinderGeometry(0.03, 0.02, 0.35, 4);
         const bone = new THREE.Mesh(boneGeom, boneMaterial);
-
         bone.position.set(
             (Math.random() - 0.5) * (CONFIG.ROOM_WIDTH - 2),
             0.05,
@@ -735,34 +638,23 @@ function createDebris() {
         scene.add(bone);
     }
 
-    // Skulls
-    for (let i = 0; i < 5; i++) {
-        const skullGroup = new THREE.Group();
-
-        // Cranium
-        const craniumGeom = new THREE.SphereGeometry(0.12, 8, 6);
-        const skullMaterial = new THREE.MeshLambertMaterial({ color: 0xd4c8b0 });
-        const cranium = new THREE.Mesh(craniumGeom, skullMaterial);
-        cranium.scale.set(1, 0.9, 1.1);
-        skullGroup.add(cranium);
-
-        // Jaw
-        const jawGeom = new THREE.BoxGeometry(0.1, 0.05, 0.08);
-        const jaw = new THREE.Mesh(jawGeom, skullMaterial);
-        jaw.position.set(0, -0.08, 0.05);
-        skullGroup.add(jaw);
-
-        skullGroup.position.set(
+    // Skulls - reduced count and simplified geometry
+    const skullMaterial = new THREE.MeshLambertMaterial({ color: 0xd4c8b0 });
+    for (let i = 0; i < 3; i++) {
+        // Simplified skull - just a sphere
+        const skullGeom = new THREE.SphereGeometry(0.12, 6, 4);
+        const skull = new THREE.Mesh(skullGeom, skullMaterial);
+        skull.scale.set(1, 0.9, 1.1);
+        skull.position.set(
             (Math.random() - 0.5) * (CONFIG.ROOM_WIDTH - 3),
             0.1,
             (Math.random() - 0.5) * (CONFIG.ROOM_DEPTH - 3)
         );
-        skullGroup.rotation.y = Math.random() * Math.PI * 2;
-        scene.add(skullGroup);
+        scene.add(skull);
     }
 
-    // Crates
-    for (let i = 0; i < 3; i++) {
+    // Crates - reduced count
+    for (let i = 0; i < 2; i++) {
         const crateSize = 0.5 + Math.random() * 0.3;
         const crateGeom = new THREE.BoxGeometry(crateSize, crateSize, crateSize);
         const crateMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
@@ -816,7 +708,7 @@ function createPillars() {
 }
 
 function createDustParticles() {
-    const particleCount = 200;
+    const particleCount = 80; // Reduced for performance
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
 
@@ -923,40 +815,26 @@ function createSkeleton(x, z) {
         targetPosition: new THREE.Vector3()
     };
 
+    // Reuse materials for all skeletons (performance)
     const boneMaterial = new THREE.MeshLambertMaterial({ color: 0xc4b8a0 });
     const darkBoneMaterial = new THREE.MeshLambertMaterial({ color: 0xa49880 });
+    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff3300 });
 
-    // Pelvis
-    const pelvisGeom = new THREE.BoxGeometry(0.4, 0.15, 0.2);
-    const pelvis = new THREE.Mesh(pelvisGeom, boneMaterial);
-    pelvis.position.y = 0.9;
-    skeleton.add(pelvis);
+    // Simplified skeleton body - single box for torso
+    const torsoGeom = new THREE.BoxGeometry(0.35, 0.6, 0.2);
+    const torso = new THREE.Mesh(torsoGeom, darkBoneMaterial);
+    torso.position.y = 1.2;
+    skeleton.add(torso);
 
-    // Spine
-    for (let i = 0; i < 4; i++) {
-        const vertebraGeom = new THREE.CylinderGeometry(0.06, 0.07, 0.12, 6);
-        const vertebra = new THREE.Mesh(vertebraGeom, boneMaterial);
-        vertebra.position.y = 1.05 + i * 0.12;
-        skeleton.add(vertebra);
-    }
-
-    // Ribcage (simplified)
-    const ribcageGeom = new THREE.BoxGeometry(0.35, 0.35, 0.2);
-    const ribcage = new THREE.Mesh(ribcageGeom, darkBoneMaterial);
-    ribcage.position.y = 1.35;
-    skeleton.add(ribcage);
-
-    // Skull
-    const skullGeom = new THREE.SphereGeometry(0.15, 8, 6);
+    // Skull (reduced segments)
+    const skullGeom = new THREE.SphereGeometry(0.15, 6, 4);
     const skull = new THREE.Mesh(skullGeom, boneMaterial);
     skull.scale.set(1, 1.1, 1.2);
     skull.position.y = 1.7;
     skeleton.add(skull);
 
-    // Eye sockets (glowing)
-    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff3300 });
-    const eyeGeom = new THREE.SphereGeometry(0.03, 6, 6);
-
+    // Eyes (glowing - reduced segments)
+    const eyeGeom = new THREE.SphereGeometry(0.035, 4, 4);
     const leftEye = new THREE.Mesh(eyeGeom, eyeMaterial);
     leftEye.position.set(-0.05, 1.72, 0.12);
     skeleton.add(leftEye);
@@ -965,65 +843,26 @@ function createSkeleton(x, z) {
     rightEye.position.set(0.05, 1.72, 0.12);
     skeleton.add(rightEye);
 
-    // Jaw
-    const jawGeom = new THREE.BoxGeometry(0.12, 0.05, 0.1);
-    const jaw = new THREE.Mesh(jawGeom, boneMaterial);
-    jaw.position.set(0, 1.58, 0.08);
-    skeleton.add(jaw);
-
-    // Arms
+    // Simplified arms - just cylinders
     [-1, 1].forEach(side => {
-        // Upper arm
-        const upperArmGeom = new THREE.CylinderGeometry(0.03, 0.04, 0.35, 6);
-        const upperArm = new THREE.Mesh(upperArmGeom, boneMaterial);
-        upperArm.position.set(side * 0.25, 1.35, 0);
-        upperArm.rotation.z = side * 0.3;
-        skeleton.add(upperArm);
-
-        // Lower arm
-        const lowerArmGeom = new THREE.CylinderGeometry(0.025, 0.03, 0.3, 6);
-        const lowerArm = new THREE.Mesh(lowerArmGeom, boneMaterial);
-        lowerArm.position.set(side * 0.35, 1.1, 0.1);
-        lowerArm.rotation.x = 0.5;
-        lowerArm.rotation.z = side * 0.2;
-        skeleton.add(lowerArm);
-
-        // Claw-like hand
-        const handGeom = new THREE.ConeGeometry(0.04, 0.1, 4);
-        const hand = new THREE.Mesh(handGeom, darkBoneMaterial);
-        hand.position.set(side * 0.4, 0.9, 0.2);
-        hand.rotation.x = Math.PI / 2;
-        skeleton.add(hand);
+        const armGeom = new THREE.CylinderGeometry(0.03, 0.04, 0.6, 4);
+        const arm = new THREE.Mesh(armGeom, boneMaterial);
+        arm.position.set(side * 0.28, 1.1, 0.05);
+        arm.rotation.z = side * 0.3;
+        arm.rotation.x = 0.3;
+        skeleton.add(arm);
     });
 
-    // Legs
+    // Simplified legs - just cylinders
     [-1, 1].forEach(side => {
-        // Thigh
-        const thighGeom = new THREE.CylinderGeometry(0.04, 0.05, 0.4, 6);
-        const thigh = new THREE.Mesh(thighGeom, boneMaterial);
-        thigh.position.set(side * 0.12, 0.65, 0);
-        skeleton.add(thigh);
-
-        // Shin
-        const shinGeom = new THREE.CylinderGeometry(0.03, 0.04, 0.4, 6);
-        const shin = new THREE.Mesh(shinGeom, boneMaterial);
-        shin.position.set(side * 0.12, 0.25, 0);
-        skeleton.add(shin);
-
-        // Foot
-        const footGeom = new THREE.BoxGeometry(0.08, 0.05, 0.15);
-        const foot = new THREE.Mesh(footGeom, darkBoneMaterial);
-        foot.position.set(side * 0.12, 0.025, 0.03);
-        skeleton.add(foot);
+        const legGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.8, 4);
+        const leg = new THREE.Mesh(legGeom, boneMaterial);
+        leg.position.set(side * 0.12, 0.45, 0);
+        skeleton.add(leg);
     });
 
     skeleton.position.set(x, 0, z);
-    skeleton.castShadow = true;
-
-    // Add point light for glowing eyes
-    const eyeLight = new THREE.PointLight(0xff3300, 0.3, 2);
-    eyeLight.position.set(0, 1.7, 0.15);
-    skeleton.add(eyeLight);
+    // No shadow casting for skeletons - performance
 
     scene.add(skeleton);
     skeletons.push(skeleton);
@@ -1595,70 +1434,39 @@ function restartGame() {
 function updateVisualEffects(delta) {
     const time = Date.now() * 0.001;
 
-    // Torch and brazier flicker
+    // Simplified torch and brazier flicker - less per-frame work
     torches.forEach((torch, index) => {
-        // Create unique flicker pattern for each torch
-        const flickerSpeed = 8 + index * 0.5;
-        const flicker = 0.85 + Math.sin(time * flickerSpeed) * 0.1 + Math.random() * 0.15;
-        const flicker2 = 0.9 + Math.cos(time * flickerSpeed * 1.3) * 0.08 + Math.random() * 0.1;
+        // Simple flicker using sin for smoother animation (less random calls)
+        const flicker = 0.9 + Math.sin(time * 8 + index * 2) * 0.15;
 
         if (torch.isBrazier) {
             // Animate central brazier
             torch.brazierLight.intensity = torch.baseIntensity * flicker;
-            torch.upLight.intensity = torch.baseFillIntensity * flicker2;
-            torch.groundLight.intensity = (torch.baseFillIntensity * 0.7) * flicker;
 
-            // Animate brazier flames
-            const scaleY = 0.9 + Math.sin(time * 10) * 0.15;
-            const scaleXZ = 0.95 + Math.cos(time * 8) * 0.1;
-            torch.centralInner.scale.set(scaleXZ, scaleY, scaleXZ);
-            torch.centralMid.scale.set(scaleXZ * 0.95, scaleY * 1.05, scaleXZ * 0.95);
-            torch.centralOuter.scale.set(scaleXZ * 1.1, scaleY * 0.9, scaleXZ * 1.1);
+            // Simple flame scale animation
+            const scaleY = 0.95 + Math.sin(time * 6) * 0.1;
+            torch.flame.scale.y = scaleY;
+            torch.core.scale.y = scaleY * 1.1;
 
-            // Pulsing coals
-            const coalPulse = 0.8 + Math.sin(time * 3) * 0.2;
+            // Pulsing coals (less frequent update)
+            const coalPulse = 0.85 + Math.sin(time * 2) * 0.15;
             torch.coals.material.color.setRGB(0.27 * coalPulse, 0.07 * coalPulse, 0);
         } else {
-            // Animate wall torches
+            // Animate wall torches - simplified
             torch.light.intensity = torch.baseIntensity * flicker;
-            if (torch.fillLight) {
-                torch.fillLight.intensity = torch.baseFillIntensity * flicker2;
-            }
 
-            // Animate flame layers with different speeds
-            const innerScale = 0.9 + Math.sin(time * 12 + index) * 0.15;
-            const midScale = 0.85 + Math.sin(time * 10 + index * 0.7) * 0.2;
-            const outerScale = 0.8 + Math.sin(time * 8 + index * 0.5) * 0.25;
-
-            if (torch.innerFlame) {
-                torch.innerFlame.scale.set(innerScale, 0.9 + Math.random() * 0.2, innerScale);
-                torch.innerFlame.rotation.y = time * 2;
-            }
-            if (torch.midFlame) {
-                torch.midFlame.scale.set(midScale, 0.85 + Math.random() * 0.25, midScale);
-                torch.midFlame.rotation.y = -time * 1.5;
-            }
-            if (torch.outerFlame) {
-                torch.outerFlame.scale.set(outerScale, 0.8 + Math.random() * 0.3, outerScale);
-                torch.outerFlame.rotation.y = time;
-            }
-            if (torch.smoke) {
-                torch.smoke.position.y = 0.6 + Math.sin(time * 5) * 0.05;
-                torch.smoke.scale.set(
-                    0.8 + Math.random() * 0.4,
-                    1 + Math.random() * 0.3,
-                    0.8 + Math.random() * 0.4
-                );
-            }
+            // Simple flame animation
+            const flameScale = 0.9 + Math.sin(time * 10 + index) * 0.15;
+            torch.flame.scale.set(flameScale, 0.95 + Math.sin(time * 8 + index) * 0.1, flameScale);
+            torch.core.scale.y = 0.95 + Math.sin(time * 12 + index) * 0.1;
         }
     });
 
-    // Dust particle movement
-    if (dustParticles) {
+    // Dust particles - update less frequently for performance
+    if (dustParticles && Math.floor(time * 10) % 2 === 0) {
         const positions = dustParticles.geometry.attributes.position.array;
         for (let i = 0; i < positions.length; i += 3) {
-            positions[i + 1] += Math.sin(time + i) * 0.002;
-            positions[i] += Math.cos(time * 0.5 + i) * 0.001;
+            positions[i + 1] += 0.003;
             if (positions[i + 1] > CONFIG.ROOM_HEIGHT) {
                 positions[i + 1] = 0;
             }
